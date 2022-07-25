@@ -42,7 +42,14 @@ export class GameApp {
     // Number of Shapes to Spwan at start
     private numberToSpawn = 3;
 
+    // Number of shapes in level
+    private numberOfShapes : number;
+
+    // Canvas
     private canvas : RectnagleCanvas;
+
+    private numberOfShapeText : PIXI.Text;
+    private gravityText : PIXI.Text;
 
     constructor(parent: HTMLElement) {
 
@@ -50,11 +57,11 @@ export class GameApp {
         parent.replaceChild(this.app.view, parent.lastElementChild); // Hack for parcel HMR
         this.canvas = new RectnagleCanvas(this.app);
         
+        this.numberOfShapes = 0;
 
         this.CreateClickEvents();
         this.CreateShapeArray();
-
-        
+       
     }
 
     // Creating Click Events for the Canvas
@@ -98,8 +105,45 @@ export class GameApp {
 
             this.shapes.push(newshape);
             this.numberToSpawn -= 1;
+            this.numberOfShapes += 1;
+            this.UpdatingText();
         }
         while(this.numberToSpawn != 0)
+    }
+
+    // Updating the Text
+    private UpdatingText(){
+
+        this.app.stage.removeChild(this.numberOfShapeText)
+        this.app.stage.removeChild(this.gravityText);
+
+        const style = new PIXI.TextStyle({
+            fontFamily: 'Arial',
+            fontSize: 36,
+            fontWeight: 'bold',
+            fill: ['#ffffff', '#00ff99'], // gradient
+            stroke: '#4a1850',
+            strokeThickness: 5,
+            dropShadow: true,
+            dropShadowColor: '#000000',
+            dropShadowBlur: 4,
+            dropShadowAngle: Math.PI / 6,
+            dropShadowDistance: 6,
+            wordWrap: true,
+            wordWrapWidth: 440,
+            lineJoin: 'round',
+        });
+
+        this.numberOfShapeText = new PIXI.Text('Number of Shapes ' + this.numberOfShapes.toString(), style);
+        this.numberOfShapeText.x = 50;
+        this.numberOfShapeText.y = 50;
+        this.app.stage.addChild(this.numberOfShapeText)
+
+        this.gravityText = new PIXI.Text('Gravity: ' + gravity.toString(), style);
+        this.gravityText.x = 50;
+        this.gravityText.y = 100;
+        this.app.stage.addChild(this.gravityText);
+
     }
 
     public RemoveShape(shape : Shape){
@@ -108,16 +152,17 @@ export class GameApp {
         if(index > -1){
             this.shapes.splice(index, 1);
             this.app.stage.removeChild(shape.getGraphics());
-
+            this.numberOfShapes -= 1;
+            this.UpdatingText();
         }
     }
 
     public ShapeClick(x : number, y : number){
         var  newshape = new Rectangle(x, y, this.getApp(), this);
         this.shapes.push(newshape); 
+        this.numberOfShapes += 1;
+        this.UpdatingText();
     }
-
-
 
     public getApp(){
         return this.app;
@@ -315,4 +360,3 @@ class Ellpse extends Shape
 
 
     
-
