@@ -30,6 +30,8 @@ const width = 1000;
 
 let container = new PIXI.Container();
 
+
+
 export class GameApp {
 
     private app: PIXI.Application;
@@ -45,10 +47,18 @@ export class GameApp {
 
         this.app = new PIXI.Application({width, height, backgroundColor : 0x000000});
         parent.replaceChild(this.app.view, parent.lastElementChild); // Hack for parcel HMR
-        var canvas = new RectnagleCanvas(this.app);
         
-        
+        this.CreateClickEvents();
         this.CreateShapeArray();
+    }
+
+    // Creating Click Events for the Canvas
+    private CreateClickEvents(){
+        this.getApp().stage.interactive = true;
+        this.getApp().stage.hitArea = this.getApp().renderer.screen;
+        this.getApp().stage.addListener('click', (e) => {
+            this.ShapeClick(e.data.global.x, e.data.global.y);
+        })    
     }
 
     // Creating a shape array
@@ -81,6 +91,10 @@ export class GameApp {
         while(this.numberToSpawn != 0)
     }
 
+    public ShapeClick(x : number, y : number){
+        var  newshape = new Rectangle(x, y, this.getApp());
+        this.shapes.push(newshape); 
+    }
 
     public getApp(){
         return this.app;
