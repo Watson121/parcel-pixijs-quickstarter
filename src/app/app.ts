@@ -23,32 +23,53 @@ const currentFrame: keyof BomberFrames = 'front';
 // Graphics Class
 
 
-const gravity = 8.31;
+const gravity = 2.3;
 
 const height = 1000;
 const width = 1000;
 
-let container = new PIXI.Container();
+
+
 
 export class GameApp {
 
     private app: PIXI.Application;
 
-    private shape : Shape;
-
+    // List of Shapes and their index
     private shapes = new Array<Shape>();
     private index = 0;
 
-    private numberToSpawn = 10;
+    // Number of Shapes to Spwan at start
+    private numberToSpawn = 3;
+
+    private canvas : RectnagleCanvas;
 
     constructor(parent: HTMLElement) {
 
         this.app = new PIXI.Application({width, height, backgroundColor : 0x000000});
         parent.replaceChild(this.app.view, parent.lastElementChild); // Hack for parcel HMR
-        var canvas = new RectnagleCanvas(this.app);
+        this.canvas = new RectnagleCanvas(this.app);
         
-        
+
+        this.CreateClickEvents();
         this.CreateShapeArray();
+
+        
+    }
+
+    // Creating Click Events for the Canvas
+    private CreateClickEvents(){
+        this.getApp().stage.interactive = true;
+        this.getApp().stage.hitArea = this.getApp().renderer.screen;
+        this.getApp().stage.addListener('click', (e) => {
+
+            console.log(e.target);
+
+            if(e.target == this.canvas.graphics) 
+            {
+                this.ShapeClick(e.data.global.x, e.data.global.y);
+            }
+        })    
     }
 
     // Creating a shape array
@@ -65,13 +86,13 @@ export class GameApp {
 
             switch(type){
                 case 0:
-                    newshape = new Rectangle(newX, newY, this.getApp());
+                    newshape = new Rectangle(newX, newY, this.getApp(), this);
                     break;
                 case 1:
-                    newshape = new Circle(newX, newY, 100, this.getApp());
+                    newshape = new Circle(newX, newY, 100, this.getApp(), this);
                     break;
                 case 2:
-                    newshape = new Ellpse(newX, newY, 50, 100, this.getApp());
+                    newshape = new Ellpse(newX, newY, 50, 100, this.getApp(), this);
                     break;
             }
 
@@ -80,6 +101,22 @@ export class GameApp {
         }
         while(this.numberToSpawn != 0)
     }
+
+    public RemoveShape(shape : Shape){
+        const index = this.shapes.indexOf(shape, 0);
+
+        if(index > -1){
+            this.shapes.splice(index, 1);
+            this.app.stage.removeChild(shape.getGraphics());
+
+        }
+    }
+
+    public ShapeClick(x : number, y : number){
+        var  newshape = new Rectangle(x, y, this.getApp(), this);
+        this.shapes.push(newshape); 
+    }
+
 
 
     public getApp(){
@@ -98,28 +135,30 @@ export class GameApp {
 
     
     }
-
-    public SetShape(shape : Shape){
-        this.shape = shape;
-    }
-
 }
 
 
 // Rectangle Cavnca - DEPERACATED
 class RectnagleCanvas {
 
-    private graphics : PIXI.Graphics;
+    private _graphics: PIXI.Graphics;
+    public get graphics(): PIXI.Graphics {
+        return this._graphics;
+    }
+    public set graphics(value: PIXI.Graphics) {
+        this._graphics = value;
+    }
 
     constructor(app: PIXI.Application){
 
         this.graphics = new PIXI.Graphics();
 
-        this.graphics.beginFill(0xffffff);
+        this.graphics.beginFill(0x000000);
         this.graphics.drawRect(0, 0, width, height);
         this.graphics.endFill();
         this.graphics.x = 0;
         this.graphics.y = 0;
+        this.graphics.interactive = true;
         app.stage.addChild(this.graphics);
     }
 }
@@ -133,17 +172,25 @@ export class Shape {
     protected graphics : PIXI.Graphics;
     protected app : PIXI.Application;
     protected container : PIXI.Container;
+    protected gameApp : GameApp;
 
     // Base Shape Constructor
-    constructor(x: number, y : number, app: PIXI.Application){
+    constructor(x: number, y : number, app: PIXI.Application, gameApp : GameApp){
         this.x = x;
         this.y = y;
         this.app = app;
-        
         this.weight = Math.random() * 5;
-        
+        this.gameApp = gameApp;
 
         this.graphics = new PIXI.Graphics();
+        this.graphics.interactive = true;
+
+        this.app.stage.addListener('click', (e) => {
+            if(e.target === this.graphics){
+                gameApp.RemoveShape(this);
+            }
+        })
+
     }
 
     // Moving the Shape down the screen
@@ -162,6 +209,10 @@ export class Shape {
         this.graphics.renderable = true;
     }
 
+    public getGraphics(){
+        return this.graphics;
+    }
+
 }
 
 // Circle Shape Class
@@ -169,8 +220,8 @@ class Circle extends Shape {
 
     private radius : number;
 
-    constructor(x: number, y : number, radius: number, app: PIXI.Application){
-        super(x, y, app);
+    constructor(x: number, y : number, radius: number, app: PIXI.Application, gameApp : GameApp){
+        super(x, y, app, gameApp);
         this.radius = radius;
 
 
@@ -200,8 +251,8 @@ class Circle extends Shape {
 
 // Rectange Class
 class Rectangle extends Shape {
-    constructor(x: number, y : number, app: PIXI.Application){
-        super(x, y, app);
+    constructor(x: number, y : number, app: PIXI.Application, gameApp : GameApp){
+        super(x, y, app, gameApp);
 
         this.graphics.beginFill(0xDE3249);
         this.graphics.drawRect(0, 0, 100, 100);
@@ -232,8 +283,8 @@ class Ellpse extends Shape
     private height : number;
     private width : number;
 
-    constructor(x: number, y : number, width : number, height : number, app: PIXI.Application){
-        super(x, y, app);
+    constructor(x: number, y : number, width : number, height : number, app: PIXI.Application, gameApp : GameApp){
+        super(x, y, app, gameApp);
 
         this.width = width;
         this.height = height;
